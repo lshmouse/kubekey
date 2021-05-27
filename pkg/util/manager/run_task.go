@@ -100,7 +100,6 @@ func (mgr *Manager) RunTaskOnNodes(nodes []kubekeyapiv1alpha1.HostCfg, task Node
 	defer close(ccons)
 	hostNum := len(nodes)
 
-
 	if parallel {
 		go func(result chan string, ccons chan struct{}) {
 			for i := 0; i < hostNum; i++ {

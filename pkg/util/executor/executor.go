@@ -62,13 +62,13 @@ func NewExecutor(cluster *kubekeyapiv1alpha1.ClusterSpec, objName string, logger
 
 func NewExecutorWithOptions(cluster *kubekeyapiv1alpha1.ClusterSpec, objName string, logger *log.Logger, sourcesDir string, clientset *kubekeyclientset.Clientset, opts ...Option) *Executor {
 	executor := &Executor{
-		ObjName:        objName,
-		Cluster:        cluster,
-		Logger:         logger,
-		SourcesDir:     sourcesDir,
-		ClientSet:      clientset,
+		ObjName:    objName,
+		Cluster:    cluster,
+		Logger:     logger,
+		SourcesDir: sourcesDir,
+		ClientSet:  clientset,
 	}
-	for _,opt := range opts {
+	for _, opt := range opts {
 		opt.apply(executor)
 	}
 	return executor
@@ -82,47 +82,47 @@ type funcOption struct {
 	f func(*Executor)
 }
 
-func(fdo *funcOption) apply(do *Executor){
+func (fdo *funcOption) apply(do *Executor) {
 	fdo.f(do)
 }
 
-func newFuncOption(f func(executor *Executor))*funcOption{
+func newFuncOption(f func(executor *Executor)) *funcOption {
 	return &funcOption{
-		f:f,
+		f: f,
 	}
 }
 
 func WithSkipFailTask(skipFailTask bool) Option {
-	return  newFuncOption(func(o *Executor){
+	return newFuncOption(func(o *Executor) {
 		o.SkipFailTask = skipFailTask
 	})
 }
 
 func WithDebug(debug bool) Option {
-	return  newFuncOption(func(o *Executor){
+	return newFuncOption(func(o *Executor) {
 		o.Debug = debug
 	})
 }
 func WithSkipCheck(skipCheck bool) Option {
-	return  newFuncOption(func(o *Executor){
+	return newFuncOption(func(o *Executor) {
 		o.SkipCheck = skipCheck
 	})
 }
 
 func WithSkipPullImages(skipPullImages bool) Option {
-	return  newFuncOption(func(o *Executor){
+	return newFuncOption(func(o *Executor) {
 		o.SkipPullImages = skipPullImages
 	})
 }
 
 func WithAddImagesRepo(addImagesRepo bool) Option {
-	return  newFuncOption(func(o *Executor){
+	return newFuncOption(func(o *Executor) {
 		o.AddImagesRepo = addImagesRepo
 	})
 }
 
 func WithInCluster(inCluster bool) Option {
-	return  newFuncOption(func(o *Executor){
+	return newFuncOption(func(o *Executor) {
 		o.InCluster = inCluster
 	})
 }
