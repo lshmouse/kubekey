@@ -14,71 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package ping
+package show
 
 import (
 	"fmt"
-	kubekeyapiv1alpha1 "github.com/kubesphere/kubekey/apis/kubekey/v1alpha1"
 	"github.com/kubesphere/kubekey/pkg/config"
 	"github.com/kubesphere/kubekey/pkg/util"
 	"github.com/kubesphere/kubekey/pkg/util/executor"
 	"github.com/kubesphere/kubekey/pkg/util/manager"
-	"github.com/mitchellh/mapstructure"
-	"github.com/modood/table"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
-// PingResults defines the items to be checked.
-type Results struct {
-	Name  string `table:"name"`
-	Time  string `table:"time"`
-	Error string `table:"error"`
-}
-
-var (
-	// CheckResults is used to save save check results.
-	CheckResults = make(map[string]interface{})
-)
-
-func PingNode(mgr *manager.Manager, node *kubekeyapiv1alpha1.HostCfg) error {
-	var results = make(map[string]interface{})
-	results["name"] = node.Name
-	output, err := mgr.Runner.ExecuteCmd("echo \"health\"", 0, false)
-	if err != nil {
-		results["time"] = ""
-		results["error"] = err.Error()
-	} else {
-		results["time"] = strings.TrimSpace(output)
-		results["error"] = ""
-	}
-	CheckResults[node.Name] = results
-	return nil
-}
-
-func PingConfirm(mgr *manager.Manager) error {
-	var results []Results
-	for node := range CheckResults {
-		var result Results
-		_ = mapstructure.Decode(CheckResults[node], &result)
-		results = append(results, result)
-	}
-	table.OutputA(results)
-	return nil
-}
-
-func PingNodes(mgr *manager.Manager) error {
-	if err := mgr.RunTaskOnAllNodes(PingNode, true); err != nil {
-		return err
-	}
-	PingConfirm(mgr)
-	return nil
-}
-
-func PingCluster(clusterCfgFile string, logger *log.Logger, verbose bool) error {
+func ShowCluster(clusterCfgFile string, logger *log.Logger, verbose bool) error {
 	currentDir, err := filepath.Abs(filepath.Dir(os.Args[0]))
 	if err != nil {
 		return errors.Wrap(err, "Failed to get current dir")
@@ -92,7 +42,10 @@ func PingCluster(clusterCfgFile string, logger *log.Logger, verbose bool) error 
 		return errors.Wrap(err, "Failed to download cluster config")
 	}
 
-	executorInstance := executor.NewExecutor(&cfg.Spec, objName, logger, "", verbose, true, true, false, false, nil)
+	executorInstance := executor.NewExecutorWithOptions(&cfg.Spec, objName, logger, "", nil,
+		executor.WithDebug(verbose), executor.WithSkipCheck(true),
+		executor.WithSkipPullImages(true), executor.WithSkipFailTask(true))
+
 	executorInstance.DownloadCommand = func(path, url string) string {
 		// this is an extension point for downloading tools, for example users can set the timeout, proxy or retry under
 		// some poor network environment. Or users even can choose another cli, it might be wget.

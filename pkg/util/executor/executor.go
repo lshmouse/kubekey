@@ -42,6 +42,7 @@ type Executor struct {
 	InCluster          bool
 	ClientSet          *kubekeyclientset.Clientset
 	DownloadCommand    func(path, url string) string
+	SkipFailTask       bool
 }
 
 func NewExecutor(cluster *kubekeyapiv1alpha1.ClusterSpec, objName string, logger *log.Logger, sourcesDir string, debug, skipCheck, skipPullImages, addImagesRepo, inCluster bool, clientset *kubekeyclientset.Clientset) *Executor {
@@ -57,6 +58,73 @@ func NewExecutor(cluster *kubekeyapiv1alpha1.ClusterSpec, objName string, logger
 		InCluster:      inCluster,
 		ClientSet:      clientset,
 	}
+}
+
+func NewExecutorWithOptions(cluster *kubekeyapiv1alpha1.ClusterSpec, objName string, logger *log.Logger, sourcesDir string, clientset *kubekeyclientset.Clientset, opts ...Option) *Executor {
+	executor := &Executor{
+		ObjName:        objName,
+		Cluster:        cluster,
+		Logger:         logger,
+		SourcesDir:     sourcesDir,
+		ClientSet:      clientset,
+	}
+	for _,opt := range opts {
+		opt.apply(executor)
+	}
+	return executor
+}
+
+type Option interface {
+	apply(*Executor)
+}
+
+type funcOption struct {
+	f func(*Executor)
+}
+
+func(fdo *funcOption) apply(do *Executor){
+	fdo.f(do)
+}
+
+func newFuncOption(f func(executor *Executor))*funcOption{
+	return &funcOption{
+		f:f,
+	}
+}
+
+func WithSkipFailTask(skipFailTask bool) Option {
+	return  newFuncOption(func(o *Executor){
+		o.SkipFailTask = skipFailTask
+	})
+}
+
+func WithDebug(debug bool) Option {
+	return  newFuncOption(func(o *Executor){
+		o.Debug = debug
+	})
+}
+func WithSkipCheck(skipCheck bool) Option {
+	return  newFuncOption(func(o *Executor){
+		o.SkipCheck = skipCheck
+	})
+}
+
+func WithSkipPullImages(skipPullImages bool) Option {
+	return  newFuncOption(func(o *Executor){
+		o.SkipPullImages = skipPullImages
+	})
+}
+
+func WithAddImagesRepo(addImagesRepo bool) Option {
+	return  newFuncOption(func(o *Executor){
+		o.AddImagesRepo = addImagesRepo
+	})
+}
+
+func WithInCluster(inCluster bool) Option {
+	return  newFuncOption(func(o *Executor){
+		o.InCluster = inCluster
+	})
 }
 
 func (executor *Executor) CreateManager() (*manager.Manager, error) {
@@ -87,9 +155,11 @@ func (executor *Executor) CreateManager() (*manager.Manager, error) {
 	mgr.DeployLocalStorage = executor.DeployLocalStorage
 	mgr.ClientSet = executor.ClientSet
 	mgr.DownloadCommand = executor.DownloadCommand
+	mgr.SkipFailTask = executor.SkipFailTask
 	if (executor.Cluster.Kubernetes.ContainerManager == "" || executor.Cluster.Kubernetes.ContainerManager == "docker") && executor.Cluster.Kubernetes.Type != "k3s" {
 		mgr.EtcdContainer = true
 	}
+
 	return mgr, nil
 }
 

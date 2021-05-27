@@ -16,22 +16,22 @@ limitations under the License.
 package cmd
 
 import (
-	"github.com/kubesphere/kubekey/pkg/cluster/ping"
+	"github.com/kubesphere/kubekey/pkg/cluster/show"
 	"github.com/kubesphere/kubekey/pkg/util"
 	"github.com/spf13/cobra"
 )
 
-// pingCmd represents the ping command
-var pingCmd = &cobra.Command{
-	Use:   "ping",
-	Short: "ping all nodes of your cluster with this command",
+// showCmd represents the show command
+var showCmd = &cobra.Command{
+	Use:   "show",
+	Short: "Show all nodes status of your cluster with this command",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		logger := util.InitLogger(opt.Verbose)
-		return ping.PingCluster(opt.ClusterCfgFile, logger, opt.Verbose)
+		return show.ShowCluster(opt.ClusterCfgFile, logger, opt.Verbose)
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(pingCmd)
-	pingCmd.Flags().StringVarP(&opt.ClusterCfgFile, "filename", "f", "", "Path to a cluster configuration file")
+	rootCmd.AddCommand(showCmd)
+	showCmd.Flags().StringVarP(&opt.ClusterCfgFile, "filename", "f", "", "Path to a cluster configuration file")
 }

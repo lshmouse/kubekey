@@ -52,6 +52,7 @@ type Manager struct {
 	Conditions         []kubekeyapiv1alpha1.Condition
 	ClientSet          *kubekeyclientset.Clientset
 	DownloadCommand    func(path, url string) string
+	SkipFailTask       bool
 }
 
 // Copy is used to create a copy for Manager.

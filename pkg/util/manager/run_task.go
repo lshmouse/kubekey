@@ -77,19 +77,14 @@ func (mgr *Manager) runTask(node *kubekeyapiv1alpha1.HostCfg, task NodeTask, ind
 		err  error
 		conn ssh.Connection
 	)
-
 	conn, err = mgr.Connector.Connect(*node)
-	if err != nil {
-		return errors.Wrapf(err, "Failed to connect to %s", node.Address)
-	}
-
 	mgr.Runner = &runner.Runner{
 		Conn:  conn,
 		Debug: mgr.Debug,
 		Host:  node,
 		Index: index,
+		Error: err,
 	}
-
 	return task(mgr, node)
 }
 
@@ -104,6 +99,7 @@ func (mgr *Manager) RunTaskOnNodes(nodes []kubekeyapiv1alpha1.HostCfg, task Node
 	defer close(result)
 	defer close(ccons)
 	hostNum := len(nodes)
+
 
 	if parallel {
 		go func(result chan string, ccons chan struct{}) {
@@ -121,7 +117,7 @@ func (mgr *Manager) RunTaskOnNodes(nodes []kubekeyapiv1alpha1.HostCfg, task Node
 
 	for i := range nodes {
 		mgr := mgr.Copy()
-		mgr.Logger = mgr.Logger.WithField("node", nodes[i].Address)
+		mgr.Logger = mgr.Logger.WithField("name", nodes[i].Name).WithField("node", nodes[i].Address)
 
 		if parallel {
 			ccons <- struct{}{}
@@ -136,7 +132,7 @@ func (mgr *Manager) RunTaskOnNodes(nodes []kubekeyapiv1alpha1.HostCfg, task Node
 			}(mgr, &nodes[i], result, i)
 		} else {
 			err = mgr.runTask(&nodes[i], task, i)
-			if err != nil {
+			if mgr.SkipFailTask == false && err != nil {
 				break
 			}
 		}

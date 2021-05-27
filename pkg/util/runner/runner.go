@@ -29,11 +29,16 @@ type Runner struct {
 	Debug bool
 	Host  *kubekeyapiv1alpha1.HostCfg
 	Index int
+	Error error
 }
 
 func (r *Runner) ExecuteCmd(cmd string, retries int, printOutput bool, args ...string) (string, error) {
 	if r.Conn == nil {
 		return "", errors.New("No ssh connection available")
+	}
+
+	if r.Error != nil {
+		return "", r.Error
 	}
 
 	var lastErr error
