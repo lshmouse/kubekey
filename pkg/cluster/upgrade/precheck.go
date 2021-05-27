@@ -19,6 +19,9 @@ package upgrade
 import (
 	"bufio"
 	"fmt"
+	"os"
+	"strings"
+
 	kubekeyapiv1alpha1 "github.com/kubesphere/kubekey/apis/kubekey/v1alpha1"
 	"github.com/kubesphere/kubekey/pkg/kubernetes/preinstall"
 	"github.com/kubesphere/kubekey/pkg/util"
@@ -27,8 +30,6 @@ import (
 	"github.com/modood/table"
 	"github.com/pkg/errors"
 	versionutil "k8s.io/apimachinery/pkg/util/version"
-	"os"
-	"strings"
 )
 
 var versionCheck = map[string]map[string]map[string]bool{
@@ -111,7 +112,7 @@ func GetClusterInfo(mgr *manager.Manager) error {
 		}
 
 		if warningFlag {
-			fmt.Println(`
+			fmt.Print(`
 Warning:
 
   An old Docker version may cause the failure of upgrade. It is recommended that you upgrade Docker to 20.10+ beforehand.
