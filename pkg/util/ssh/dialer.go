@@ -17,24 +17,25 @@ limitations under the License.
 package ssh
 
 import (
+	"github.com/kubesphere/kubekey/pkg/util/dialer"
 	"sync"
 	"time"
 
 	kubekeyapiv1alpha1 "github.com/kubesphere/kubekey/apis/kubekey/v1alpha1"
 )
 
-type Dialer struct {
+type SSHDialer struct {
 	lock        sync.Mutex
-	connections map[int]Connection
+	connections map[int]dialer.Connection
 }
 
-func NewDialer() *Dialer {
-	return &Dialer{
-		connections: make(map[int]Connection),
+func NewDialer() *SSHDialer {
+	return &SSHDialer{
+		connections: make(map[int]dialer.Connection),
 	}
 }
 
-func (dialer *Dialer) Connect(host kubekeyapiv1alpha1.HostCfg) (Connection, error) {
+func (dialer *SSHDialer) Connect(host kubekeyapiv1alpha1.HostCfg) (dialer.Connection, error) {
 	var err error
 
 	dialer.lock.Lock()

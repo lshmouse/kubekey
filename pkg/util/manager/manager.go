@@ -19,27 +19,27 @@ package manager
 import (
 	kubekeyapiv1alpha1 "github.com/kubesphere/kubekey/apis/kubekey/v1alpha1"
 	kubekeyclientset "github.com/kubesphere/kubekey/clients/clientset/versioned"
+	"github.com/kubesphere/kubekey/pkg/util/dialer"
 	"github.com/kubesphere/kubekey/pkg/util/runner"
-	"github.com/kubesphere/kubekey/pkg/util/ssh"
 	log "github.com/sirupsen/logrus"
 )
 
 // Manager defines all the parameters needed for the installation.
 type Manager struct {
-	ObjName            string
-	Cluster            *kubekeyapiv1alpha1.ClusterSpec
-	Logger             log.FieldLogger
-	Connector          *ssh.Dialer
-	Runner             *runner.Runner
-	AllNodes           []kubekeyapiv1alpha1.HostCfg
-	EtcdNodes          []kubekeyapiv1alpha1.HostCfg
-	MasterNodes        []kubekeyapiv1alpha1.HostCfg
-	WorkerNodes        []kubekeyapiv1alpha1.HostCfg
-	K8sNodes           []kubekeyapiv1alpha1.HostCfg
-	EtcdContainer      bool
-	ClusterHosts       []string
-	WorkDir            string
-	KsEnable           bool
+	ObjName       string
+	Cluster       *kubekeyapiv1alpha1.ClusterSpec
+	Logger        log.FieldLogger
+	Connector     dialer.Dialer
+	Runner        *runner.Runner
+	AllNodes      []kubekeyapiv1alpha1.HostCfg
+	EtcdNodes     []kubekeyapiv1alpha1.HostCfg
+	MasterNodes   []kubekeyapiv1alpha1.HostCfg
+	WorkerNodes   []kubekeyapiv1alpha1.HostCfg
+	K8sNodes      []kubekeyapiv1alpha1.HostCfg
+	EtcdContainer bool
+	ClusterHosts  []string
+	WorkDir       string
+	KsEnable      bool
 	KsVersion          string
 	Debug              bool
 	SkipCheck          bool

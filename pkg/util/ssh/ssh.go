@@ -20,6 +20,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"github.com/kubesphere/kubekey/pkg/util/dialer"
 	"io/ioutil"
 	"net"
 	"os"
@@ -39,14 +40,8 @@ import (
 const socketEnvPrefix = "env:"
 
 var (
-	_ Connection = &connection{}
+	_ dialer.Connection = &connection{}
 )
-
-type Connection interface {
-	Exec(cmd string, host *kubekeyapiv1alpha1.HostCfg) (stdout string, err error)
-	Scp(src, dst string) error
-	Close()
-}
 
 type Cfg struct {
 	Username    string
@@ -123,7 +118,7 @@ func validateOptions(cfg Cfg) (Cfg, error) {
 	return cfg, nil
 }
 
-func NewConnection(cfg Cfg) (Connection, error) {
+func NewConnection(cfg Cfg) (dialer.Connection, error) {
 	cfg, err := validateOptions(cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to validate ssh connection parameters")

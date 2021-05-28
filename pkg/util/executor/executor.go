@@ -18,6 +18,7 @@ package executor
 
 import (
 	"fmt"
+	"github.com/kubesphere/kubekey/pkg/util/dialer"
 	"os"
 	"path/filepath"
 
@@ -43,6 +44,7 @@ type Executor struct {
 	ClientSet          *kubekeyclientset.Clientset
 	DownloadCommand    func(path, url string) string
 	SkipFailTask       bool
+	Connector          dialer.Dialer
 }
 
 func NewExecutor(cluster *kubekeyapiv1alpha1.ClusterSpec, objName string, logger *log.Logger, sourcesDir string, debug, skipCheck, skipPullImages, addImagesRepo, inCluster bool, clientset *kubekeyclientset.Clientset) *Executor {
@@ -57,6 +59,7 @@ func NewExecutor(cluster *kubekeyapiv1alpha1.ClusterSpec, objName string, logger
 		AddImagesRepo:  addImagesRepo,
 		InCluster:      inCluster,
 		ClientSet:      clientset,
+		Connector:      ssh.NewDialer(),
 	}
 }
 
@@ -127,6 +130,12 @@ func WithInCluster(inCluster bool) Option {
 	})
 }
 
+func WithConnector(connector dialer.Dialer) Option {
+	return newFuncOption(func(o *Executor) {
+		o.Connector = connector
+	})
+}
+
 func (executor *Executor) CreateManager() (*manager.Manager, error) {
 	mgr := &manager.Manager{}
 	defaultCluster, hostGroups, err := executor.Cluster.SetDefaultClusterSpec(executor.InCluster, executor.Logger)
@@ -140,7 +149,7 @@ func (executor *Executor) CreateManager() (*manager.Manager, error) {
 	mgr.K8sNodes = hostGroups.K8s
 	mgr.Cluster = defaultCluster
 	mgr.ClusterHosts = GenerateHosts(hostGroups, defaultCluster)
-	mgr.Connector = ssh.NewDialer()
+	mgr.Connector = executor.Connector
 	mgr.WorkDir = GenerateWorkDir(executor.Logger)
 	mgr.KsEnable = executor.Cluster.KubeSphere.Enabled
 	mgr.KsVersion = executor.Cluster.KubeSphere.Version
@@ -159,7 +168,6 @@ func (executor *Executor) CreateManager() (*manager.Manager, error) {
 	if (executor.Cluster.Kubernetes.ContainerManager == "" || executor.Cluster.Kubernetes.ContainerManager == "docker") && executor.Cluster.Kubernetes.Type != "k3s" {
 		mgr.EtcdContainer = true
 	}
-
 	return mgr, nil
 }
 

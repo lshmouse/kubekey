@@ -57,10 +57,10 @@ func ShowCluster(clusterCfgFile string, logger *log.Logger, verbose bool) error 
 }
 
 func ExecTasks(mgr *manager.Manager) error {
-	pingTasks := []manager.Task{
+	showTasks := []manager.Task{
 		{Task: PingNodes, ErrMsg: "Failed to ping all nodes of the clusters"},
 	}
-	for _, step := range pingTasks {
+	for _, step := range showTasks {
 		if err := step.Run(mgr); err != nil {
 			return errors.Wrap(err, step.ErrMsg)
 		}

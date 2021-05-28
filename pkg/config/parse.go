@@ -43,9 +43,9 @@ func ParseClusterCfg(clusterCfgPath, k8sVersion, ksVersion string, ksEnabled boo
 	)
 	if len(clusterCfgPath) == 0 {
 		currentUser, _ := user.Current()
-		if currentUser.Username != "root" {
-			return nil, "", errors.New(fmt.Sprintf("Current user is %s. Please use root!", currentUser.Username))
-		}
+		//if currentUser.Username != "root" {
+		//	return nil, "", errors.New(fmt.Sprintf("Current user is %s. Please use root!", currentUser.Username))
+		//}
 		clusterCfg, objName = AllinoneCfg(currentUser, k8sVersion, ksVersion, ksEnabled, logger)
 	} else {
 		cfg, name, err := ParseCfg(clusterCfgPath, k8sVersion, ksVersion, ksEnabled)
