@@ -1,4 +1,4 @@
-package show
+package install
 
 import (
 	"fmt"
@@ -9,6 +9,8 @@ import (
 	"runtime"
 	"testing"
 )
+
+var logger = util.InitLogger(true)
 
 type MockConnector struct {
 }
@@ -21,6 +23,7 @@ type MockConnection struct {
 }
 
 func (mock *MockConnection) Exec(cmd string, host *kubekeyapiv1alpha1.HostCfg) (stdout string, err error) {
+	logger.Info("run cmd: %s on host: %s", cmd, host)
 	return "OK",nil
 }
 
@@ -31,7 +34,7 @@ func (mock *MockConnection) Scp(src, dst string) error {
 func (mock *MockConnection) Close() {
 }
 
-func GenTestCfg(name string) (*kubekeyapiv1alpha1.Cluster, string) {
+func GenTestClusterCfg(name string, nodeNum int) (*kubekeyapiv1alpha1.Cluster, string) {
 	cfg := kubekeyapiv1alpha1.Cluster{}
 	cfg.Spec.Hosts = append(cfg.Spec.Hosts, kubekeyapiv1alpha1.HostCfg{
 		Name:            name,
@@ -55,18 +58,24 @@ func GenTestCfg(name string) (*kubekeyapiv1alpha1.Cluster, string) {
 	return &cfg, name
 }
 
-func Test_showNodes(t *testing.T) {
-	logger := util.InitLogger(true)
-	cfg, objName := GenTestCfg("Test_showNodes")
+func Test_install(t *testing.T) {
+	cfg, objName := GenTestCfg("Test_install")
 
 	executor := executor.NewExecutorWithOptions(&cfg.Spec, objName, logger, "", nil,
 		executor.WithDebug(true), executor.WithSkipCheck(true),
 		executor.WithSkipPullImages(true), executor.WithSkipFailTask(true),
 		executor.WithConnector(&MockConnector{}))
 
+	executor.DownloadCommand = func(path, url string) string {
+		// this is an extension point for downloading tools, for example users can set the timeout, proxy or retry under
+		// some poor network environment. Or users even can choose another cli, it might be wget.
+		// perhaps we should have a build-in download function instead of totally rely on the external one
+		return fmt.Sprintf("curl -L -o %s %s", path, url)
+	}
+
 	mgr, err := executor.CreateManager()
 	if err != nil {
 		t.Errorf("Create executor manager failure: %s", err)
 	}
-	PingNodes(mgr)
+	ExecTasks(mgr)
 }
