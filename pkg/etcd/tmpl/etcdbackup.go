@@ -1,9 +1,26 @@
+/*
+Copyright 2020 The KubeSphere Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package tmpl
 
 import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"text/template"
 
 	kubekeyapiv1alpha1 "github.com/kubesphere/kubekey/apis/kubekey/v1alpha1"
@@ -17,7 +34,8 @@ var EtcdBackupScriptTmpl = template.Must(template.New("etcdBackupScript").Parse(
 	dedent.Dedent(`#!/bin/bash
 
 ETCDCTL_PATH='/usr/local/bin/etcdctl'
-ENDPOINTS='{{ .Etcdendpoint }}'
+ENDPOINTS='{{ .EtcdEndpoints }}'
+ETCD_BACKUP_ENDPOINT='{{ .EtcdBackupEndpoint }}'
 ETCD_DATA_DIR="/var/lib/etcd"
 BACKUP_DIR="{{ .Backupdir }}/etcd-$(date +%Y-%m-%d-%H-%M-%S)"
 KEEPBACKUPNUMBER='{{ .KeepbackupNumber }}'
@@ -36,7 +54,7 @@ export ETCDCTL_API=2;$ETCDCTL_PATH backup --data-dir $ETCD_DATA_DIR --backup-dir
 sleep 3
 
 {
-export ETCDCTL_API=3;$ETCDCTL_PATH --endpoints="$ENDPOINTS" snapshot save $BACKUP_DIR/snapshot.db \
+export ETCDCTL_API=3;$ETCDCTL_PATH --endpoints="$ETCD_BACKUP_ENDPOINT" snapshot save $BACKUP_DIR/snapshot.db \
                                    --cacert="$ETCDCTL_CA_FILE" \
                                    --cert="$ETCDCTL_CERT" \
                                    --key="$ETCDCTL_KEY"
@@ -65,7 +83,11 @@ rm -rf /tmp/file
 
 // EtcdBackupScript is used to generate etcd backup script content.
 func EtcdBackupScript(mgr *manager.Manager, node *kubekeyapiv1alpha1.HostCfg) (string, error) {
+	ips := []string{}
 	var etcdBackupHour string
+	for _, host := range mgr.EtcdNodes {
+		ips = append(ips, fmt.Sprintf("https://%s:2379", host.InternalAddress))
+	}
 	if mgr.Cluster.Kubernetes.EtcdBackupPeriod != 0 {
 		period := mgr.Cluster.Kubernetes.EtcdBackupPeriod
 		if period > 60 && period < 1440 {
@@ -80,7 +102,8 @@ func EtcdBackupScript(mgr *manager.Manager, node *kubekeyapiv1alpha1.HostCfg) (s
 
 	return util.Render(EtcdBackupScriptTmpl, util.Data{
 		"Hostname":            node.Name,
-		"Etcdendpoint":        fmt.Sprintf("https://%s:2379", node.InternalAddress),
+		"EtcdEndpoints":       strings.Join(ips, ","),
+		"EtcdBackupEndpoint":  fmt.Sprintf("https://%s:2379", node.InternalAddress),
 		"Backupdir":           mgr.Cluster.Kubernetes.EtcdBackupDir,
 		"KeepbackupNumber":    mgr.Cluster.Kubernetes.KeepBackupNumber,
 		"EtcdBackupPeriod":    mgr.Cluster.Kubernetes.EtcdBackupPeriod,
